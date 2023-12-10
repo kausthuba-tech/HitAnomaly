@@ -139,6 +139,9 @@ def main() :
     new_log_dataset['Label'] = new_log_dataset['Label'].map(labels)
     new_log_dataset = new_log_dataset[['Component','Content', 'Label']]
 
+    print("Count of Anomalies:", new_log_dataset['Label'].sum())
+    print("Count of Non-Anomalies:", (new_log_dataset['Label'] == 0).sum())
+
     new_log_dataset['Component_tokens'] = new_log_dataset["Component"].apply(lambda x : [str(x)])
     new_log_dataset = split_into_tokens(new_log_dataset, "Content")
 
@@ -157,22 +160,17 @@ def main() :
     for data in test_loader :
         batch = {k: v.to(torch.device('mps'), dtype = torch.long) for k, v in data.items()}
         output, labels_ = model.decode(**batch)
+
+
         predictions = torch.cat((predictions, output))
 
         labels = torch.cat((labels, labels_))
 
     correct_predictions = (predictions.squeeze() == labels).sum().item()
     accuracy = correct_predictions / predictions.shape[0]
-    true_positives = ((predictions.squeeze() == 1) & (labels == 1)).sum().item() + 1 
-    false_positives = ((predictions.squeeze() == 1) & (labels == 0)).sum().item() + 1 
-    false_negatives = ((predictions.squeeze() == 0) & (labels == 1)).sum().item() + 1
-    precision = true_positives / (true_positives + false_positives + 1)
-    recall = true_positives / (true_positives + false_negatives + 1 )
-    f1_score = 2 * (precision * recall) / (precision + recall)
+
     print("Accuracy : ", accuracy)
-    print("Precision : ", precision)
-    print("Recall : ", recall)
-    print("F1 Score : ", f1_score)
+
 
 if __name__ == "__main__" :
     main()
